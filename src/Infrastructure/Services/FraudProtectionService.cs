@@ -3,6 +3,7 @@
 
 using Contoso.FraudProtection.ApplicationCore.Entities.FraudProtectionApiModels;
 using Contoso.FraudProtection.ApplicationCore.Entities.FraudProtectionApiModels.AccountProtection.Response;
+using Contoso.FraudProtection.ApplicationCore.Entities.FraudProtectionApiModels.Response;
 using Contoso.FraudProtection.ApplicationCore.Exceptions;
 using Contoso.FraudProtection.ApplicationCore.Interfaces;
 using Microsoft.Dynamics.FraudProtection.Models;
@@ -172,6 +173,14 @@ namespace Contoso.FraudProtection.Infrastructure.Services
 
             var response = await PostAsync(endpoint, assessment.Payload, correlationId, envId, true);
             return await Read<ResponseSuccess>(response);
+        }
+
+        public async Task<AssessmentResponse> PostAssessment(CustomAssessment assessment, string correlationId, string envId)
+        {
+            string endpoint = string.Format(_settings.Endpoints.Assessment, assessment.ApiName);
+
+            var response = await PostAsync(endpoint, assessment.Payload, correlationId, envId, true);
+            return await Read<AssessmentResponse>(response);
         }
     }
     #endregion

@@ -13,7 +13,9 @@
 }
 
 <div class="container">
-    <form asp-controller="Account" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" class="form-horizontal">
+    <form asp-controller="Account" method="post" class="form-horizontal">
+        @Html.HiddenFor(m => m.DeviceFingerPrinting.SessionId)
+
         <div class="row">
             <div asp-validation-summary="All" class="text-danger"></div>
 
@@ -22,16 +24,42 @@
                     <h3>Custom Assessment</h3>
                     <div class="form-group">
                         <div class="col-xs-12">
-                            <label for="firstName">API Name</label>
+                            <div>Use <b>@@deviceContextId</b> in your request to have it replaced with the DFP Fingerprinting session ID.</div>
+                            <div>Use <b>@@deviceIpAddress</b> in your request to have it replaced with the client's IP address.</div>
+                            <pre>
+ {
+     ...
+     "deviceContext": {
+         "deviceContextId": "@@deviceContextId",
+         "ipAddress": "@@deviceIpAddress",
+         ...
+     }
+     ...
+ }
+                            </pre>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-xs-12">
+                            <label for="ApiName">API Name</label>
                             @Html.TextBoxFor(model => model.ApiName, new { @class = "form-control" })
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="col-xs-12" style="margin-top: 10px">
-                            <label for="lastName">Payload</label>
+                            <label for="Payload">Payload</label>
                             @Html.TextAreaFor(model => model.Payload, new { @class = "form-control", Style = "height:150px" })
                         </div>
                     </div>
+                    <div class="form-group">  
+                        <div class="col-xs-12" style="margin-top: 10px">
+                            <label>Version</label>
+                            <label for="V1">V1</label>
+                            @Html.RadioButtonFor(model => model.Version, EndpointVersion.V1, new { id = "V1" })
+                            <label for="V2">V2</label>
+                            @Html.RadioButtonFor(model => model.Version, EndpointVersion.V2, new { id = "V2" })  
+                        </div>
+                    </div>  
                     <div class="form-group">
                         <div class="col-xs-12">
                             <input type="submit" asp-action="CustomAssessment"
@@ -48,3 +76,5 @@
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
+
+<partial name="_DeviceFingerPrinting" model="Model.DeviceFingerPrinting" />
