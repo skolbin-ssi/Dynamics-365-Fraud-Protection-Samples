@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+using Contoso.FraudProtection.ApplicationCore.Entities.FraudProtectionApiModels.Response;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -24,19 +25,20 @@ namespace Contoso.FraudProtection.Web.ViewModels
         /// </summary>
         public FraudProtectionIOModel() { }
 
-        public FraudProtectionIOModel(string correlationId, object request, object response, string name = "", bool skipSerialization = false)
+        public FraudProtectionIOModel(string correlationId, object request, SampleResponseRaw response, string name = "", bool skipSerialization = false)
         {
             CorrelationId = correlationId;
             Add(request, response, name, skipSerialization);
         }
 
-        public void Add(object request, object response, string name = "", bool skipSerialization = false)
+        public void Add(object request, SampleResponseRaw response, string name = "", bool skipSerialization = false)
         {
             RequestResponsePairs.Add(new RequestResponsePair
             {
                 Request = skipSerialization ? request as string : JsonSerializer.Serialize(request, JsonSerializerOptions),
-                Response = JsonSerializer.Serialize(response, JsonSerializerOptions),
-                Name = name
+                Response = JsonSerializer.Serialize(response.RawData, JsonSerializerOptions),
+                Name = name,
+                ResponseTime = response.ResponseTime
             });
         }
     }
@@ -46,5 +48,6 @@ namespace Contoso.FraudProtection.Web.ViewModels
         public string Request { get; set; }
         public string Response { get; set; }
         public string Name { get; set; }
+        public long ResponseTime {  get; set; }
     }
 }

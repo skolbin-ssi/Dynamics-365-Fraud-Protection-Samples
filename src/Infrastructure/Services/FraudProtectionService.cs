@@ -46,7 +46,7 @@ namespace Contoso.FraudProtection.Infrastructure.Services
             _tokenProviderService = tokenProviderService;
             _requestSerializationOptions = new JsonSerializerOptions
             {
-                IgnoreNullValues = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
             _responseDeserializationOptions = new JsonSerializerOptions
@@ -90,8 +90,12 @@ namespace Contoso.FraudProtection.Infrastructure.Services
                });
         }
 
-        private async Task<T> Read<T>(HttpResponseMessage response) where T : new()
+        private async Task<SampleResponse<T>> CallAndRead<T>(Func<Task<HttpResponseMessage>> apiCall) where T : new()
         {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            var response = await apiCall();
+            watch.Stop();
+
             if (!response.IsSuccessStatusCode)
             {
                 throw new FraudProtectionApiException(response);
@@ -100,87 +104,78 @@ namespace Contoso.FraudProtection.Infrastructure.Services
             var content = await response.Content.ReadAsStringAsync();
             response.Dispose();
 
-            return JsonSerializer.Deserialize<T>(content, _responseDeserializationOptions);
+            return new SampleResponse<T>
+            {
+                Data = JsonSerializer.Deserialize<T>(content, _responseDeserializationOptions),
+                RawData = JsonSerializer.Deserialize<object>(content, _responseDeserializationOptions),
+                ResponseTime = watch.ElapsedMilliseconds,  
+            };
         }
 
-        public async Task<PurchaseResponse> PostPurchase(Purchase purchase, string correlationId, string envId)
+        public async Task<SampleResponse<PurchaseResponse>> PostPurchase(Purchase purchase, string correlationId, string envId)
         {
-            var response = await PostAsync(_settings.Endpoints.Purchase, purchase, correlationId, envId);
-            return await Read<PurchaseResponse>(response);
+            return await CallAndRead<PurchaseResponse>(() => PostAsync(_settings.Endpoints.Purchase, purchase, correlationId, envId));
         }
 
-        public async Task<FraudProtectionResponse> PostRefund(Refund refund, string correlationId, string envId)
+        public async Task<SampleResponse<FraudProtectionResponse>> PostRefund(Refund refund, string correlationId, string envId)
         {
-            var response = await PostAsync(_settings.Endpoints.Refund, refund, correlationId, envId);
-            return await Read<FraudProtectionResponse>(response);
+            return await CallAndRead<FraudProtectionResponse>(() => PostAsync(_settings.Endpoints.Refund, refund, correlationId, envId));
         }
 
-        public async Task<FraudProtectionResponse> PostUser(User userAccount, string correlationId, string envId)
+        public async Task<SampleResponse<FraudProtectionResponse>> PostUser(User userAccount, string correlationId, string envId)
         {
-            var response = await PostAsync(_settings.Endpoints.UpdateAccount, userAccount, correlationId, envId);
-            return await Read<FraudProtectionResponse>(response);
+            return await CallAndRead<FraudProtectionResponse>(() => PostAsync(_settings.Endpoints.UpdateAccount, userAccount, correlationId, envId));
         }
 
-        public async Task<FraudProtectionResponse> PostBankEvent(BankEvent bankEvent, string correlationId, string envId)
+        public async Task<SampleResponse<FraudProtectionResponse>> PostBankEvent(BankEvent bankEvent, string correlationId, string envId)
         {
-            var response = await PostAsync(_settings.Endpoints.BankEvent, bankEvent, correlationId, envId);
-            return await Read<FraudProtectionResponse>(response);
+            return await CallAndRead<FraudProtectionResponse>(() => PostAsync(_settings.Endpoints.BankEvent, bankEvent, correlationId, envId));
         }
 
-        public async Task<FraudProtectionResponse> PostChargeback(Chargeback chargeback, string correlationId, string envId)
+        public async Task<SampleResponse<FraudProtectionResponse>> PostChargeback(Chargeback chargeback, string correlationId, string envId)
         {
-            var response = await PostAsync(_settings.Endpoints.Chargeback, chargeback, correlationId, envId);
-            return await Read<FraudProtectionResponse>(response);
+            return await CallAndRead<FraudProtectionResponse>(() => PostAsync(_settings.Endpoints.Chargeback, chargeback, correlationId, envId));
         }
 
-        public async Task<FraudProtectionResponse> PostPurchaseStatus(PurchaseStatusEvent purchaseStatus, string correlationId, string envId)
+        public async Task<SampleResponse<FraudProtectionResponse>> PostPurchaseStatus(PurchaseStatusEvent purchaseStatus, string correlationId, string envId)
         {
-            var response = await PostAsync(_settings.Endpoints.PurchaseStatus, purchaseStatus, correlationId, envId);
-            return await Read<FraudProtectionResponse>(response);
+            return await CallAndRead<FraudProtectionResponse>(() => PostAsync(_settings.Endpoints.PurchaseStatus, purchaseStatus, correlationId, envId));
         }
 
-        public async Task<Response> PostSignup(AccountProtection.SignUp signup, string correlationId, string envId)
+        public async Task<SampleResponse<Response>> PostSignup(AccountProtection.SignUp signup, string correlationId, string envId)
         {
-            string endpoint = string.Format(_settings.Endpoints.SignupAP, signup.Metadata.SignUpId);
-
-            var response = await PostAsync(endpoint, signup, correlationId, envId);
-            return await Read<ResponseSuccess>(response);
+            var endpoint = string.Format(_settings.Endpoints.SignupAP, signup.Metadata.SignUpId);
+            return await CallAndRead<Response>(() => PostAsync(endpoint, signup, correlationId, envId));
         }
 
-        public async Task<FraudProtectionResponse> PostSignupStatus(SignupStatusEvent signupStatus, string correlationId, string envId)
+        public async Task<SampleResponse<FraudProtectionResponse>> PostSignupStatus(SignupStatusEvent signupStatus, string correlationId, string envId)
         {
-            var response = await PostAsync(_settings.Endpoints.SignupStatus, signupStatus, correlationId, envId);
-            return await Read<FraudProtectionResponse>(response);
+            return await CallAndRead<FraudProtectionResponse>(() => PostAsync(_settings.Endpoints.SignupStatus, signupStatus, correlationId, envId));
         }
 
-        public async Task<FraudProtectionResponse> PostLabel(Label label, string correlationId, string envId)
+        public async Task<SampleResponse<FraudProtectionResponse>> PostLabel(Label label, string correlationId, string envId)
         {
-            var response = await PostAsync(_settings.Endpoints.Label, label, correlationId, envId);
-            return await Read<FraudProtectionResponse>(response);
+            return await CallAndRead<FraudProtectionResponse>(() => PostAsync(_settings.Endpoints.Label, label, correlationId, envId));
         }
 
-        public async Task<Response> PostSignIn(AccountProtection.SignIn signIn, string correlationId, string envId)
+        public async Task<SampleResponse<Response>> PostSignIn(AccountProtection.SignIn signIn, string correlationId, string envId)
         {
-            string endpoint = string.Format(_settings.Endpoints.SignInAP, signIn.Metadata.LoginId);
+            var endpoint = string.Format(_settings.Endpoints.SignInAP, signIn.Metadata.LoginId);
 
-            var response = await PostAsync(endpoint, signIn, correlationId, envId);
-            return await Read<ResponseSuccess>(response);
+            return await CallAndRead<Response>(() => PostAsync(endpoint, signIn, correlationId, envId));
         }
 
-        public async Task<Response> PostCustomAssessment(CustomAssessment assessment, string correlationId, string envId)
+        public async Task<SampleResponse<Response>> PostCustomAssessment(CustomAssessment assessment, string correlationId, string envId)
         {
-            string endpoint = string.Format(_settings.Endpoints.CustomAssessment, assessment.ApiName);
+            var endpoint = string.Format(_settings.Endpoints.CustomAssessment, assessment.ApiName);
 
-            var response = await PostAsync(endpoint, assessment.Payload, correlationId, envId, true);
-            return await Read<ResponseSuccess>(response);
+            return await CallAndRead<Response>(() => PostAsync(endpoint, assessment.Payload, correlationId, envId, true));
         }
 
-        public async Task<AssessmentResponse> PostAssessment(CustomAssessment assessment, string correlationId, string envId)
+        public async Task<SampleResponse<AssessmentResponse>> PostAssessment(CustomAssessment assessment, string correlationId, string envId)
         {
-            string endpoint = string.Format(_settings.Endpoints.Assessment, assessment.ApiName);
-
-            var response = await PostAsync(endpoint, assessment.Payload, correlationId, envId, true);
-            return await Read<AssessmentResponse>(response);
+            var endpoint = string.Format(_settings.Endpoints.Assessment, assessment.ApiName);
+            return await CallAndRead<AssessmentResponse>(() => PostAsync(endpoint, assessment.Payload, correlationId, envId, true));
         }
     }
     #endregion
